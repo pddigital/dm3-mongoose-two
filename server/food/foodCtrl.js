@@ -1,4 +1,7 @@
-const Food = require( './Food' );
+const { Food, Review } = require( './Food' );
+const User = require( '../user/User' );
+// var Food = require( './Food' ).Food;
+// var Review = require( './Food' ).Review;
 
 module.exports = {
 	postFood( req, res ) {
@@ -7,31 +10,93 @@ module.exports = {
 				return res.status( 500 ).json( err );
 			}
 
-			return res.status( 201 ).json( newFood );
+			User.findById( req.params.id, ( err, user ) => {
+				if ( err ) {
+					return res.status( 500 ).json( err );
+				}
+
+				user.foodsCreated.push( newFood._id );
+				user.save( ( err, savedUser ) => {
+					if ( err ) {
+						return res.status( 500 ).json( err );
+					}
+
+					return res.status( 201 ).json( newFood );
+				} );
+			} );
+
 		} );
 		// new Food( req.body ).save( function( err, newFood ) {
 		//
 		// } )
 	},
 
-	getFood( req, res ) {
-		Food.find( {}, ( err, food ) => {
-			if ( err ) {
-				return res.status( 500 ).json( err );
-			}
-
-			return res.status( 200 ).json( food );
-		} );
-	},
-
-	getOneFood( req, res ) {
+	postReview( req, res ) {
 		Food.findById( req.params.id, ( err, food ) => {
 			if ( err ) {
 				return res.status( 500 ).json( err );
 			}
 
-			return res.status( 200 ).json( food );
+			food.reviews.push( new Review( req.body ) );
+			food.save( ( err, updatedFood ) => {
+				if ( err ) {
+					return res.status( 500 ).json( err );
+				}
+
+				return res.status( 201 ).json( updatedFood );
+			} );
 		} );
+	},
+
+	deleteReview( req, res ) {
+		Food.findById( req.params.foodId, ( err, food ) => {
+			if ( err ) {
+				return res.status( 500 ).json( err );
+			}
+
+			food.reviews.id( req.params.reviewId, ( err, review ) => {
+				if ( err ) {
+					return res.status( 500 ).json( err );
+				}
+				review.remove( ( err, deletedReview ) => {
+					if ( err ) {
+						return res.status( 500 ).json( err );
+					}
+
+					return res.status( 200 ).json( deletedReview );
+				} );
+			} );
+		} );
+	},
+
+	// getFood( req, res ) {
+	// 	Food.find( {}, ( err, food ) => {
+	// 		if ( err ) {
+	// 			return res.status( 500 ).json( err );
+	// 		}
+	// 		console.log( food.reviews );
+	// 		food[ 0 ].reviews.populate( `author` )
+	// 			.exec( ( err, populatedFood ) => {
+	// 				if ( err ) {
+	// 					return res.status( 500 ).json( err );
+	// 				}
+	//
+	// 				return res.status( 200 ).json( populatedFood );
+	// 			} );
+	// 	} );
+	// },
+
+	getOneFood( req, res ) {
+		Food
+			.findById( req.params.id )
+			.populate( `chef` )
+			.exec( ( err, populatedFood ) => {
+				if ( err ) {
+					return res.status( 500 ).json( err );
+				}
+
+				return res.status( 200 ).json( populatedFood );
+			} );
 	},
 
 	deleteOneFood( req, res ) {
@@ -70,3 +135,6 @@ module.exports = {
 		} );
 	}
 };
+
+// 576ab9f258d1b53a7a505dac - ZachyBoy
+// 576963955b3590de6ac3e4f8 - Food
